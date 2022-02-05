@@ -20,7 +20,9 @@ import android.os.Bundle
 import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.work.WorkInfo
 import com.example.background.databinding.ActivityBlurBinding
+import androidx.lifecycle.Observer
 
 class BlurActivity : AppCompatActivity() {
 
@@ -37,6 +39,28 @@ class BlurActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         binding.goButton.setOnClickListener { viewModel.applyBlur(blurLevel) }
+
+        viewModel.outputWorkInfos.observe(this, workInfosObserver())
+    }
+
+    private fun workInfosObserver(): Observer<List<WorkInfo>> {
+        return Observer { listOfWorkInfo ->
+
+            // if there are no matching work info, do nothing
+            if (listOfWorkInfo.isNullOrEmpty()){
+                return@Observer
+            }
+
+            // we only care about the one output status
+            // every continuation has only one worker tagged TAG_OUTPUT
+            val workInfo = listOfWorkInfo[0]
+
+            if (workInfo.state.isFinished) {
+                showWorkFinished()
+            } else {
+                showWorkInProgress()
+            }
+        }
     }
 
     /**
